@@ -10,21 +10,28 @@ socket.on('disconnect', function () {
 
 //event listener
 socket.on('newMessage', function (message) {
-  console.log('New Message: ', message);
-  var li = jQuery('<li></li>');
-  li.text(`${message.from}:  ${message.text}`);
+  var formattedTime = moment(message.createdAt).format('h:mm a');
+  var template = jQuery('#message-template').html();
+  var html = Mustache.render(template, {
+    text: message.text,
+    from: message.from,
+    createdAt: formattedTime
+  });
 
-  jQuery('#messages').append(li);
+  jQuery('#messages').append(html);
+
 });
 
 socket.on('newLocationMessage', function (message) {
-  var li = jQuery('<li></li>');
-  var a = jQuery('<a target="_blank">My Current Location</a>');
+  var formattedTime = moment(message.createdAt).format('h:mm a');
+  var template = jQuery('#location-message-template').html();
+  var html = Mustache.render(template, {
+    url: message.url,
+    from: message.from,
+    createdAt: formattedTime
+  });
 
-  li.text(`${message.from}: `);
-  a.attr('href', message.url);
-  li.append(a);
-  jQuery('#messages').append(li);
+  jQuery('#messages').append(html);
 });
 
 jQuery('#message-form').on('submit', function(e) {
@@ -47,17 +54,17 @@ locationButton.on('click', function () {
     return alert('Geolocation not suppoerted by your browser.');
   }
 
-  locationButton.attr('disabled', 'disabled').text('Sending location...');
+  locationButton.attr('disabled', 'disabled').text('Getting location...');
 
   navigator.geolocation.getCurrentPosition(function (position) {
-    locationButton.removeAttr('disabled').text('Send location');
+    locationButton.removeAttr('disabled').text('Location retrieved');
     socket.emit('createLocationMessage', {
     latitude: position.coords.latitude,
     longitude: position.coords.longitude
   });
       console.log(position);
     }, function () {
-      locationButton.removeAttr('disabled').text('Send location');
+      locationButton.removeAttr('disabled').text('Try location again?');
       alert('Unable to fetch location.');
     });
 });
